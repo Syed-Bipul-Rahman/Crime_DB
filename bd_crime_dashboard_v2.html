@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Crime Statistics — 2010–2025</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface2: #f5f5f7;
+  --border: rgba(0,0,0,0.08);
+  --text1: #1d1d1f;
+  --text2: #6e6e73;
+  --text3: #aeaeb2;
+  --accent: #0071e3;
+  --accent-l: #e8f0fd;
+  --danger: #ff3b30;
+  --warn: #ff9500;
+  --success: #34c759;
+  --r-sm: 10px; --r-md: 16px; --r-lg: 20px;
+  --sh-sm: 0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --sh-md: 0 4px 16px rgba(0,0,0,0.08),0 1px 4px rgba(0,0,0,0.04);
+  --sh-lg: 0 12px 40px rgba(0,0,0,0.12),0 2px 8px rgba(0,0,0,0.06);
+  --font: -apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+}
+body { font-family:var(--font); background:var(--bg); color:var(--text1); min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+/* ── HEADER ── */
+.header { background:rgba(245,245,247,.88); backdrop-filter:saturate(180%) blur(20px); position:sticky; top:0; z-index:200; border-bottom:1px solid var(--border); padding:0 24px; }
+.header-inner { max-width:1240px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:52px; }
+.header-title { font-size:17px; font-weight:600; letter-spacing:-.3px; }
+.header-sub { font-size:12px; color:var(--text2); }
+.header-badge { background:var(--text1); color:#fff; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; }
+
+/* ── NAV TABS ── */
+.nav-tabs { background:var(--surface); border-bottom:1px solid var(--border); padding:0 24px; }
+.nav-tabs-inner { max-width:1240px; margin:0 auto; display:flex; gap:0; }
+.nav-tab { padding:12px 20px; font-size:13px; font-weight:500; color:var(--text2); cursor:pointer; border-bottom:2px solid transparent; transition:all .15s; white-space:nowrap; }
+.nav-tab:hover { color:var(--text1); }
+.nav-tab.active { color:var(--text1); border-bottom-color:var(--text1); font-weight:600; }
+
+/* ── MAIN ── */
+.main { max-width:1240px; margin:0 auto; padding:28px 24px 80px; }
+.page { display:none; }
+.page.active { display:block; }
+
+/* ── HERO CARDS ── */
+.hero-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+.hero-card { background:var(--surface); border-radius:var(--r-lg); padding:20px; box-shadow:var(--sh-sm); border:1px solid var(--border); transition:transform .18s,box-shadow .18s; cursor:default; }
+.hero-card:hover { transform:translateY(-2px); box-shadow:var(--sh-md); }
+.hero-lbl { font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; }
+.hero-val { font-size:30px; font-weight:700; letter-spacing:-1.2px; line-height:1; }
+.hero-sub { font-size:12px; color:var(--text3); margin-top:6px; }
+
+/* ── CARDS ── */
+.card { background:var(--surface); border-radius:var(--r-lg); box-shadow:var(--sh-sm); border:1px solid var(--border); }
+.card-pad { padding:24px; }
+.card-hd { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+.card-title { font-size:17px; font-weight:600; letter-spacing:-.3px; }
+.card-sub { font-size:13px; color:var(--text2); margin-top:2px; }
+.chart-wrap { position:relative; }
+.h260 { height:260px; }
+.h300 { height:300px; }
+.h360 { height:360px; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+.mb20 { margin-bottom:20px; }
+.mb24 { margin-bottom:24px; }
+
+/* ── FILTERS BAR ── */
+.filters-bar { background:var(--surface); border-radius:var(--r-lg); padding:16px 20px; box-shadow:var(--sh-sm); border:1px solid var(--border); margin-bottom:20px; display:flex; flex-wrap:wrap; gap:20px; align-items:flex-end; }
+.fg { display:flex; flex-direction:column; gap:6px; }
+.flbl { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text2); }
+.pills { display:flex; gap:6px; flex-wrap:wrap; }
+.pill { padding:6px 14px; border-radius:20px; font-size:13px; font-weight:500; border:1.5px solid var(--border); background:var(--surface); color:var(--text2); cursor:pointer; transition:all .15s; white-space:nowrap; font-family:var(--font); }
+.pill:hover { border-color:#aaa; color:var(--text1); }
+.pill.active { background:var(--text1); color:#fff; border-color:var(--text1); }
+.pill.colored { background:var(--surface); }
+select.sel { appearance:none; background:var(--surface2); border:1.5px solid var(--border); border-radius:var(--r-sm); padding:7px 30px 7px 12px; font-size:13px; font-weight:500; color:var(--text1); font-family:var(--font); cursor:pointer; outline:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236e6e73' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+select.sel:focus { border-color:var(--accent); }
+
+/* ── RANGE SLIDER ── */
+.range-wrap { display:flex; flex-direction:column; gap:8px; min-width:280px; }
+.range-labels { display:flex; justify-content:space-between; font-size:13px; font-weight:600; color:var(--text1); }
+.range-track { position:relative; height:4px; background:var(--border); border-radius:4px; margin:4px 0; }
+.range-fill { position:absolute; height:100%; background:var(--text1); border-radius:4px; pointer-events:none; }
+.range-inputs { position:relative; height:20px; }
+.range-inputs input[type=range] { position:absolute; width:100%; appearance:none; background:transparent; pointer-events:none; height:4px; top:8px; outline:none; }
+.range-inputs input[type=range]::-webkit-slider-thumb { appearance:none; width:18px; height:18px; border-radius:50%; background:#fff; border:2px solid var(--text1); pointer-events:all; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.2); }
+.range-inputs input[type=range]::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:#fff; border:2px solid var(--text1); pointer-events:all; cursor:pointer; }
+
+/* ── SEARCH INPUT ── */
+.search-input { appearance:none; background:var(--surface2); border:1.5px solid var(--border); border-radius:var(--r-sm); padding:7px 12px 7px 32px; font-size:13px; font-family:var(--font); color:var(--text1); width:200px; outline:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:10px center; }
+.search-input::placeholder { color:var(--text3); }
+.search-input:focus { border-color:var(--accent); }
+
+/* ── TABLE ── */
+.table-card { background:var(--surface); border-radius:var(--r-lg); box-shadow:var(--sh-sm); border:1px solid var(--border); overflow:hidden; }
+.table-hd { display:flex; justify-content:space-between; align-items:center; padding:20px 24px 16px; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:12px; }
+table { width:100%; border-collapse:collapse; }
+thead th { padding:10px 20px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text2); text-align:left; border-bottom:1px solid var(--border); cursor:pointer; user-select:none; white-space:nowrap; }
+thead th:hover { color:var(--text1); }
+thead th.sorted { color:var(--accent); }
+tbody tr { border-bottom:1px solid var(--border); transition:background .1s; }
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:var(--surface2); }
+tbody td { padding:10px 20px; font-size:13px; white-space:nowrap; }
+.mini-bar-bg { background:var(--surface2); border-radius:4px; height:4px; overflow:hidden; margin-top:4px; }
+.mini-bar-fill { height:100%; border-radius:4px; background:var(--text1); }
+.pag { display:flex; align-items:center; justify-content:space-between; padding:14px 24px; border-top:1px solid var(--border); }
+.pag-info { font-size:12px; color:var(--text2); }
+.pag-btns { display:flex; gap:6px; }
+.pb { width:28px; height:28px; border-radius:7px; border:1.5px solid var(--border); background:var(--surface); font-size:12px; font-weight:500; color:var(--text2); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .12s; font-family:var(--font); }
+.pb:hover:not(:disabled) { border-color:#aaa; color:var(--text1); }
+.pb.active { background:var(--text1); color:#fff; border-color:var(--text1); }
+.pb:disabled { opacity:.3; cursor:default; }
+
+/* ── HEATMAP ── */
+.heatmap-wrap { overflow-x:auto; padding-bottom:8px; }
+.heatmap-table { border-collapse:separate; border-spacing:3px; min-width:600px; }
+.heatmap-table th { font-size:11px; font-weight:600; color:var(--text2); text-align:center; padding:4px 6px; white-space:nowrap; }
+.heatmap-table th.unit-th { text-align:left; padding-right:12px; font-size:11px; min-width:130px; }
+.hm-cell { width:46px; height:32px; border-radius:6px; cursor:pointer; transition:transform .12s,opacity .12s; position:relative; }
+.hm-cell:hover { transform:scale(1.08); z-index:10; }
+.hm-cell .hm-val { font-size:9px; font-weight:600; color:rgba(255,255,255,.85); display:flex; align-items:center; justify-content:center; height:100%; }
+.hm-legend { display:flex; align-items:center; gap:8px; margin-top:12px; }
+.hm-legend-bar { display:flex; height:10px; border-radius:5px; overflow:hidden; width:180px; }
+.hm-legend-lbl { font-size:11px; color:var(--text2); }
+
+/* ── YOY ── */
+.yoy-positive { color:var(--danger); }
+.yoy-negative { color:var(--success); }
+.yoy-badge { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:600; padding:2px 7px; border-radius:20px; }
+.yoy-badge.up { background:#fff2f2; color:var(--danger); }
+.yoy-badge.dn { background:#f0faf3; color:var(--success); }
+.yoy-badge.neu { background:var(--surface2); color:var(--text2); }
+
+/* ── ANOMALY ── */
+.anomaly-flag { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:4px; }
+.anomaly-high { background:var(--danger); }
+.anomaly-low { background:var(--success); }
+
+/* ── RANKING TABLE ── */
+.rank-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+.rank-row:last-child { border-bottom:none; }
+.rank-num { font-size:13px; font-weight:700; color:var(--text3); width:20px; flex-shrink:0; }
+.rank-num.top3 { color:var(--text1); }
+.rank-name { font-size:13px; font-weight:500; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rank-bar-bg { flex:2; background:var(--surface2); border-radius:4px; height:5px; overflow:hidden; }
+.rank-bar-fill { height:100%; border-radius:4px; background:var(--text1); transition:width .5s ease; }
+.rank-val { font-size:13px; font-weight:600; color:var(--text1); width:60px; text-align:right; flex-shrink:0; }
+
+/* ── MODAL ── */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); backdrop-filter:blur(8px); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity .22s; }
+.modal-overlay.open { opacity:1; pointer-events:all; }
+.modal { background:var(--surface); border-radius:24px; width:100%; max-width:800px; max-height:90vh; overflow-y:auto; box-shadow:var(--sh-lg); transform:translateY(20px) scale(.98); transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
+.modal-overlay.open .modal { transform:translateY(0) scale(1); }
+.modal-header { display:flex; justify-content:space-between; align-items:flex-start; padding:28px 28px 0; }
+.modal-title { font-size:24px; font-weight:700; letter-spacing:-.6px; }
+.modal-sub { font-size:13px; color:var(--text2); margin-top:4px; }
+.modal-close { width:32px; height:32px; border-radius:50%; background:var(--surface2); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--text2); flex-shrink:0; transition:background .12s; }
+.modal-close:hover { background:var(--border); }
+.modal-body { padding:24px 28px 28px; }
+.modal-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+.modal-stat { background:var(--surface2); border-radius:var(--r-md); padding:14px; }
+.modal-stat-lbl { font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+.modal-stat-val { font-size:22px; font-weight:700; letter-spacing:-.6px; }
+.modal-stat-sub { font-size:11px; color:var(--text3); margin-top:3px; }
+
+/* ── SECTION TITLES ── */
+.sec-title { font-size:22px; font-weight:700; letter-spacing:-.5px; margin-bottom:4px; }
+.sec-desc { font-size:14px; color:var(--text2); margin-bottom:16px; }
+hr.divider { border:none; border-top:1px solid var(--border); margin:28px 0 24px; }
+
+/* ── MULTI UNIT CHECKBOXES ── */
+.unit-check-grid { display:flex; flex-wrap:wrap; gap:6px; }
+.unit-check { display:flex; align-items:center; gap:6px; padding:5px 10px; border-radius:20px; border:1.5px solid var(--border); cursor:pointer; transition:all .12s; user-select:none; font-size:12px; font-weight:500; color:var(--text2); }
+.unit-check:hover { border-color:#aaa; }
+.unit-check.checked { border-color:transparent; color:#fff; }
+.unit-dot { width:8px; height:8px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+/* ── TOOLTIP custom ── */
+.custom-tooltip { position:absolute; background:var(--text1); color:#fff; border-radius:10px; padding:10px 14px; font-size:12px; pointer-events:none; z-index:50; white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,.2); display:none; }
+.custom-tooltip.show { display:block; }
+
+/* ── ANOMALY BANNER ── */
+.anomaly-list { display:flex; flex-direction:column; gap:8px; }
+.anomaly-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:var(--r-sm); background:var(--surface2); font-size:13px; }
+.anomaly-item.high { border-left:3px solid var(--danger); }
+.anomaly-item.low { border-left:3px solid var(--success); }
+.anomaly-item-main { flex:1; font-weight:500; }
+.anomaly-item-val { font-size:12px; color:var(--text2); }
+
+@media(max-width:900px) { .hero-grid{grid-template-columns:repeat(2,1fr);} .two-col{grid-template-columns:1fr;} .modal-stats{grid-template-columns:1fr 1fr;} }
+@media(max-width:600px) { .hero-grid{grid-template-columns:1fr 1fr;} .main{padding:16px 16px 64px;} .nav-tab{padding:10px 14px;font-size:12px;} }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-title">Bangladesh Crime Statistics</div>
+      <div class="header-sub">2010 – 2025 · All Police Units</div>
+    </div>
+    <span class="header-badge">16 Units · 15 Years</span>
+  </div>
+</header>
+
+<!-- NAV TABS -->
+<nav class="nav-tabs">
+  <div class="nav-tabs-inner">
+    <div class="nav-tab active" data-tab="overview">Overview</div>
+    <div class="nav-tab" data-tab="trends">Trends & YoY</div>
+    <div class="nav-tab" data-tab="compare">Multi-Unit Compare</div>
+    <div class="nav-tab" data-tab="heatmap">Heatmap</div>
+    <div class="nav-tab" data-tab="ranking">Rankings</div>
+    <div class="nav-tab" data-tab="anomalies">Anomalies</div>
+    <div class="nav-tab" data-tab="browse">Browse Data</div>
+  </div>
+</nav>
+
+<!-- UNIT DEEP-DIVE MODAL -->
+<div class="modal-overlay" id="unitModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">—</div>
+        <div class="modal-sub" id="modalSub">Police Unit Deep Dive</div>
+      </div>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-stats" id="modalStats"></div>
+      <div class="card-title" style="margin-bottom:12px;font-size:15px;">Total Cases by Year</div>
+      <div class="chart-wrap h260 mb24"><canvas id="modalLineChart"></canvas></div>
+      <div class="card-title" style="margin-bottom:12px;font-size:15px;">Crime Breakdown (Latest Year)</div>
+      <div id="modalBreakdown"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOOLTIP -->
+<div class="custom-tooltip" id="hmTooltip"></div>
+
+<main class="main">
+
+<!-- ═══════════════════ PAGE: OVERVIEW ═══════════════════ -->
+<div class="page active" id="page-overview">
+
+  <!-- HERO -->
+  <div class="hero-grid" id="heroGrid"></div>
+
+  <!-- FILTERS -->
+  <div class="filters-bar">
+    <div class="fg">
+      <div class="flbl">Year Range</div>
+      <div class="range-wrap">
+        <div class="range-labels"><span id="yrFromLbl">2010</span><span id="yrToLbl">2025</span></div>
+        <div class="range-track"><div class="range-fill" id="rangeFill"></div></div>
+        <div class="range-inputs">
+          <input type="range" id="sliderFrom" min="0" max="100" value="0">
+          <input type="range" id="sliderTo" min="0" max="100" value="100">
+        </div>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="flbl">Category</div>
+      <div class="pills" id="catPills"></div>
+    </div>
+    <div class="fg">
+      <div class="flbl">View</div>
+      <div class="pills" id="viewPills">
+        <button class="pill active" data-view="trend">Trend</button>
+        <button class="pill" data-view="compare">Compare</button>
+        <button class="pill" data-view="breakdown">Breakdown</button>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="flbl">Unit</div>
+      <select class="sel" id="unitFilter"><option value="all">All Units</option></select>
+    </div>
+  </div>
+
+  <!-- MAIN CHART -->
+  <div class="card card-pad mb20">
+    <div class="card-hd">
+      <div><div class="card-title" id="mainChartTitle">Total Cases Over Time</div><div class="card-sub" id="mainChartSub"></div></div>
+    </div>
+    <div class="chart-wrap h300"><canvas id="mainChart"></canvas></div>
+  </div>
+
+  <!-- TWO COL -->
+  <div class="two-col">
+    <div class="card card-pad">
+      <div class="card-hd"><div><div class="card-title">Crime Composition</div><div class="card-sub" id="donutSub"></div></div></div>
+      <div class="chart-wrap h260"><canvas id="donutChart"></canvas></div>
+    </div>
+    <div class="card card-pad">
+      <div class="card-hd"><div><div class="card-title">Top Units</div><div class="card-sub" id="barSub"></div></div></div>
+      <div class="chart-wrap h260"><canvas id="barChart"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ PAGE: TRENDS & YOY ═══════════════════ -->
+<div class="page" id="page-trends">
+  <div class="sec-title">Year-over-Year Change</div>
+  <div class="sec-desc">Track how crime rates shifted each year compared to the previous one</div>
+
+  <div class="filters-bar" style="margin-bottom:20px;">
+    <div class="fg">
+      <div class="flbl">Category</div>
+      <select class="sel" id="yoyCat"></select>
+    </div>
+    <div class="fg">
+      <div class="flbl">Unit</div>
+      <select class="sel" id="yoyUnit"><option value="all">All Units Combined</option></select>
+    </div>
+  </div>
+
+  <div class="card card-pad mb20">
+    <div class="card-hd"><div><div class="card-title">YoY % Change</div><div class="card-sub" id="yoyChartSub">Positive = increase, negative = decrease</div></div></div>
+    <div class="chart-wrap h300"><canvas id="yoyChart"></canvas></div>
+  </div>
+
+  <div class="two-col">
+    <div class="card card-pad">
+      <div class="card-hd"><div><div class="card-title">Absolute Values</div><div class="card-sub">Raw count by year</div></div></div>
+      <div class="chart-wrap h260"><canvas id="yoyAbsChart"></canvas></div>
+    </div>
+    <div class="card card-pad" style="overflow:hidden;">
+      <div class="card-hd"><div><div class="card-title">YoY Summary</div><div class="card-sub">Year-by-year breakdown</div></div></div>
+      <div style="overflow-y:auto;max-height:290px;">
+        <table id="yoySummaryTable" style="width:100%;border-collapse:collapse;"></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PAGE: MULTI-UNIT COMPARE ═══════════════════ -->
+<div class="page" id="page-compare">
+  <div class="sec-title">Multi-Unit Comparison</div>
+  <div class="sec-desc">Overlay multiple units on the same chart to compare trends</div>
+
+  <div class="filters-bar mb20">
+    <div class="fg">
+      <div class="flbl">Category</div>
+      <select class="sel" id="cmpCat"></select>
+    </div>
+    <div class="fg" style="flex:1;min-width:300px;">
+      <div class="flbl">Select Units (up to 6)</div>
+      <div class="unit-check-grid" id="unitCheckGrid"></div>
+    </div>
+  </div>
+
+  <div class="card card-pad mb20">
+    <div class="card-hd"><div><div class="card-title" id="cmpChartTitle">Unit Comparison Over Time</div><div class="card-sub" id="cmpChartSub"></div></div></div>
+    <div class="chart-wrap h360"><canvas id="cmpChart"></canvas></div>
+  </div>
+
+  <div class="card card-pad">
+    <div class="card-hd"><div><div class="card-title">Selected Unit Totals</div><div class="card-sub">Sum across all available years</div></div></div>
+    <div id="cmpTotalsBar" style="padding-top:4px;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PAGE: HEATMAP ═══════════════════ -->
+<div class="page" id="page-heatmap">
+  <div class="sec-title">Unit × Year Heatmap</div>
+  <div class="sec-desc">See every unit across every year at a glance. Darker = more cases. Click a cell for details.</div>
+
+  <div class="filters-bar mb20">
+    <div class="fg">
+      <div class="flbl">Category</div>
+      <select class="sel" id="hmCat"></select>
+    </div>
+    <div class="fg">
+      <div class="flbl">Scale</div>
+      <div class="pills" id="hmScalePills">
+        <button class="pill active" data-scale="linear">Linear</button>
+        <button class="pill" data-scale="log">Log</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-pad mb20">
+    <div class="heatmap-wrap">
+      <table class="heatmap-table" id="hmTable"></table>
+    </div>
+    <div class="hm-legend">
+      <span class="hm-legend-lbl">Low</span>
+      <div class="hm-legend-bar" id="hmLegendBar"></div>
+      <span class="hm-legend-lbl">High</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PAGE: RANKINGS ═══════════════════ -->
+<div class="page" id="page-ranking">
+  <div class="sec-title">Crime Category Rankings</div>
+  <div class="sec-desc">See which units and years lead in each crime category</div>
+
+  <div class="filters-bar mb20">
+    <div class="fg">
+      <div class="flbl">Rank By</div>
+      <select class="sel" id="rankCat"></select>
+    </div>
+    <div class="fg">
+      <div class="flbl">Group By</div>
+      <div class="pills" id="rankGroupPills">
+        <button class="pill active" data-group="unit">By Unit</button>
+        <button class="pill" data-group="year">By Year</button>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="flbl">Year Filter</div>
+      <select class="sel" id="rankYear"><option value="all">All Years</option></select>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card card-pad">
+      <div class="card-hd"><div><div class="card-title" id="rankTitle1">Top 10 Units</div></div></div>
+      <div id="rankList1"></div>
+    </div>
+    <div class="card card-pad">
+      <div class="card-hd"><div><div class="card-title" id="rankTitle2">Category Totals</div></div></div>
+      <div id="rankList2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PAGE: ANOMALIES ═══════════════════ -->
+<div class="page" id="page-anomalies">
+  <div class="sec-title">Anomaly Detection</div>
+  <div class="sec-desc">Records that deviate significantly (±2σ) from their unit's historical average</div>
+
+  <div class="filters-bar mb20">
+    <div class="fg">
+      <div class="flbl">Category</div>
+      <select class="sel" id="anomCat"></select>
+    </div>
+    <div class="fg">
+      <div class="flbl">Type</div>
+      <div class="pills" id="anomTypePills">
+        <button class="pill active" data-type="both">All</button>
+        <button class="pill" data-type="high">Spikes ↑</button>
+        <button class="pill" data-type="low">Drops ↓</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col mb20">
+    <div class="card card-pad">
+      <div class="card-hd"><div><div class="card-title">Anomalies Detected</div><div class="card-sub" id="anomSub"></div></div></div>
+      <div class="chart-wrap h260"><canvas id="anomChart"></canvas></div>
+    </div>
+    <div class="card card-pad">
+      <div class="card-hd"><div><div class="card-title">Anomaly List</div></div></div>
+      <div id="anomList" style="overflow-y:auto;max-height:280px;"></div>
+    </div>
+  </div>
+
+  <div class="card card-pad">
+    <div class="card-hd"><div><div class="card-title">Anomaly Distribution by Unit</div><div class="card-sub">How many anomalous years each unit has</div></div></div>
+    <div class="chart-wrap h260"><canvas id="anomDistChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PAGE: BROWSE ═══════════════════ -->
+<div class="page" id="page-browse">
+  <div class="sec-title">Browse Data</div>
+  <div class="sec-desc">Filter, sort, and explore every record</div>
+  <div class="table-card">
+    <div class="table-hd">
+      <div style="font-size:17px;font-weight:600;">Raw Records</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <select class="sel" id="tblYear"><option value="all">All Years</option></select>
+        <select class="sel" id="tblUnit"><option value="all">All Units</option></select>
+        <input class="search-input" type="text" placeholder="Search unit…" id="tblSearch">
+      </div>
+    </div>
+    <div style="overflow-x:auto;"><table><thead id="tblHead"></thead><tbody id="tblBody"></tbody></table></div>
+    <div class="pag" id="tblPag"></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ═══════════════ DATA ═══════════════
+const CATS = ['Dacoity','Robbery','Murder','Speedy Trial','Riot','Woman & Child Repression','Kidnapping','Police Assault','Burglary','Theft','Other Cases','Arms Act','Explosive Act','Narcotics','Smuggling'];
+const CAT_LABELS = CATS.map(c => c === 'Woman & Child Repression' ? 'Women & Child' : c);
+
+const CSV = `Names of Unit,Year,Dacoity,Robbery,Murder,Speedy Trial,Riot,Woman & Child Repression,Kidnapping,Police Assault,Burglary,Theft,Other Cases,Arms Act,Explosive Act,Narcotics,Smuggling,Total Cases
+Barishal Range,2020,11,33,143,45,0,1432,20,18,143,216,5003,32,4,2772,8,9880
+BMP,2020,0,13,20,20,0,161,1,1,67,115,449,9,0,680,1,1537
+Chittagong Range,2020,83,144,727,108,6,2888,93,78,446,1020,11372,474,21,10110,117,27687
+CMP,2020,2,81,77,107,0,797,13,18,123,216,1501,410,9,2899,35,6288
+Dhaka Range,2020,109,198,704,145,1,3398,124,97,383,1001,11252,138,26,9212,67,26855
+DMP,2020,21,176,219,105,3,2198,44,54,658,1217,5132,124,31,12619,72,22673
+GMP,2020,14,29,66,23,0,456,43,9,40,127,967,27,1,1188,7,2997
+Khulna Range,2020,25,83,334,41,0,2135,34,26,212,773,7334,168,17,6496,260,17938
+KMP,2020,0,15,17,5,0,112,7,4,21,70,298,5,1,1205,4,1764
+Mymensingh Range,2020,5,28,215,81,0,1861,16,29,77,459,6160,33,0,3903,80,12947
+Rajshahi Range,2020,9,71,388,65,0,2861,24,45,83,515,6697,185,32,11738,1061,23774
+Railway Range,2020,1,9,15,0,0,10,3,1,2,58,93,2,0,202,40,436
+Rangpur Range,2020,4,30,311,31,0,2543,21,19,130,660,8597,18,0,4636,492,17492
+RMP,2020,0,29,16,5,2,241,11,3,38,82,584,11,0,2441,213,3676
+RPMP,2020,0,5,23,12,0,229,12,2,11,104,556,3,0,581,0,1538
+SMP,2020,4,7,31,62,1,269,4,11,32,110,819,14,2,539,55,1960
+Sylhet Range,2020,14,27,233,16,0,926,16,34,67,457,4282,37,2,2118,255,8484
+Barishal Range,2021,24,26,149,84,0,1300,14,17,146,258,4715,25,9,2760,8,9535
+BMP,2021,2,6,10,16,0,129,2,1,57,108,446,12,0,918,0,1707
+Chittagong Range,2021,59,126,586,128,3,2823,81,131,401,1110,11589,459,41,12589,162,30288
+CMP,2021,4,76,66,146,1,850,25,25,181,301,1927,479,16,2620,26,6743
+Dhaka Range,2021,115,240,708,162,11,3559,86,124,441,1384,11864,255,47,8885,44,27925
+DMP,2021,23,144,166,89,4,2218,49,69,643,1343,6139,118,74,16213,169,27461
+GMP,2021,13,29,58,31,0,431,33,13,43,150,729,28,1,1078,1,2638
+Khulna Range,2021,19,87,301,55,1,2015,22,32,208,874,7676,144,23,6877,192,18526
+KMP,2021,3,7,15,1,0,123,5,5,25,121,400,15,0,1100,12,1832
+Mymensingh Range,2021,2,19,191,156,0,2155,26,24,59,544,6208,26,6,3670,184,13270
+Rajshahi Range,2021,12,87,399,80,0,2310,29,70,87,646,7076,213,44,11824,671,23548
+Railway Range,2021,1,7,8,2,0,6,0,0,1,91,95,4,0,238,6,459
+Rangpur Range,2021,15,34,267,24,0,2529,31,40,167,705,8300,15,5,4529,276,16937
+RMP,2021,0,20,32,5,3,171,8,6,28,66,597,11,0,2771,156,3874
+RPMP,2021,0,0,11,34,0,223,7,3,35,150,594,2,0,667,2,1728
+SMP,2021,0,20,27,73,0,309,3,16,56,165,1054,21,0,877,66,2687
+Sylhet Range,2021,16,43,220,31,0,985,16,32,67,482,4059,34,2,2059,298,8344
+Barishal Range,2022,23,37,122,29,0,1283,15,21,138,314,4374,24,21,2818,7,9226
+BMP,2022,5,6,14,9,0,166,3,8,54,106,481,7,3,1033,0,1895
+Chittagong Range,2022,70,171,521,116,3,2323,76,118,355,1111,10629,553,34,13357,366,29803
+CMP,2022,6,79,60,123,0,701,26,21,172,377,1953,134,6,2102,32,5792
+Dhaka Range,2022,154,308,762,294,1,3479,95,118,523,1574,12509,191,102,10230,34,30374
+DMP,2022,27,145,172,165,8,2012,49,88,713,1603,7367,70,126,16035,169,28749
+GMP,2022,23,31,57,25,0,424,31,16,26,140,844,25,6,1004,6,2658
+Khulna Range,2022,33,66,291,54,1,1932,18,28,200,970,8090,131,61,7526,206,19607
+KMP,2022,2,3,18,4,0,190,4,3,45,58,354,13,3,968,2,1667
+Mymensingh Range,2022,13,33,244,89,0,2172,39,32,74,562,6145,23,8,3680,355,13469
+Rajshahi Range,2022,20,113,350,79,0,2624,26,59,118,872,8056,306,82,13205,644,26554
+Railway Range,2022,0,18,13,0,0,12,3,2,0,133,156,8,0,321,16,682
+Rangpur Range,2022,12,47,254,32,0,2646,40,30,204,850,8416,18,1,4459,105,17114
+RMP,2022,1,31,26,8,0,180,8,7,36,91,545,11,1,2658,29,3632
+RPMP,2022,0,0,4,13,0,174,2,1,6,183,675,1,0,424,0,1483
+SMP,2022,0,9,18,69,0,309,1,14,55,125,935,10,0,714,61,2320
+Sylhet Range,2022,15,30,193,23,0,976,13,34,60,510,4232,13,6,2080,248,8433
+Barishal Range,2023,19,28,116,41,0,1301,9,27,131,295,4512,32,36,2487,5,9039
+BMP,2023,4,6,16,12,1,197,1,2,50,72,543,2,4,833,1,1744
+Chittagong Range,2023,48,212,622,71,2,2020,91,132,422,1115,11034,521,94,11625,408,28417
+CMP,2023,3,105,53,86,0,513,32,25,151,407,1607,30,8,2587,36,5643
+Dhaka Range,2023,130,263,670,248,0,3291,70,115,429,1350,11304,167,84,11460,48,29629
+DMP,2023,34,199,165,189,20,1602,61,83,547,1511,7529,58,127,12789,135,25049
+GMP,2023,14,44,94,16,0,319,31,22,36,115,916,7,14,1058,9,2695
+Khulna Range,2023,21,67,241,87,1,1698,30,23,173,926,7710,113,67,8071,201,19429
+KMP,2023,3,7,17,9,0,296,3,3,55,110,428,22,2,1030,3,1988
+Mymensingh Range,2023,1,22,196,66,0,1798,34,11,78,547,6076,29,98,3182,418,12556
+Rajshahi Range,2023,17,121,320,93,0,2289,31,33,110,952,8376,418,152,12054,444,25410
+Railway Range,2023,1,28,14,2,2,8,1,1,0,197,142,16,1,227,12,652
+Rangpur Range,2023,10,35,267,29,0,2377,28,37,166,826,9231,12,14,4928,99,18059
+RMP,2023,0,39,20,1,1,190,17,22,42,120,594,21,57,1395,6,2525
+RPMP,2023,0,0,8,8,0,132,4,4,0,121,557,7,2,505,2,1350
+SMP,2023,2,11,18,108,1,207,3,28,51,182,795,2,9,495,126,2038
+Sylhet Range,2023,12,38,186,38,0,703,15,38,42,629,4204,11,9,1677,548,8150
+Barishal Range,2024,32,30,133,164,2,1711,17,17,180,329,5329,40,30,1707,3,9724
+BMP,2024,2,7,15,17,2,174,8,10,65,81,687,3,4,467,3,1545
+Chittagong Range,2024,89,263,570,112,19,1957,88,104,419,1169,12186,517,85,7580,282,25440
+CMP,2024,11,98,90,76,12,399,40,40,149,349,1766,31,5,1555,38,4659
+Dhaka Range,2024,178,273,803,177,2,2928,86,130,464,1084,12672,136,77,8157,31,27198
+DMP,2024,41,248,339,231,83,1460,132,95,607,1568,6483,78,51,6407,141,17964
+GMP,2024,23,46,89,13,0,319,31,22,61,125,971,10,9,906,7,2632
+Khulna Range,2024,21,90,296,101,4,1555,33,40,179,767,7987,159,56,5670,126,17084
+KMP,2024,4,17,24,7,0,179,11,9,47,127,477,24,3,1108,8,2045
+Mymensingh Range,2024,6,42,228,72,0,1332,32,27,68,485,5216,28,10,2398,416,10360
+Rajshahi Range,2024,24,119,343,70,0,2254,41,45,80,861,9103,306,190,8619,282,22337
+Railway Range,2024,2,26,12,2,0,7,0,0,0,148,221,6,0,212,7,643
+Rangpur Range,2024,17,48,230,36,0,2200,47,23,150,719,8928,18,4,4731,74,17225
+RMP,2024,2,32,16,9,1,190,14,16,44,120,666,6,45,1215,6,2382
+RPMP,2024,1,6,18,5,0,79,36,2,0,91,525,5,0,444,3,1215
+SMP,2024,7,10,24,75,0,161,11,23,59,95,723,5,37,356,168,1754
+Sylhet Range,2024,30,49,194,59,0,666,15,40,83,537,4414,16,5,1185,489,7782
+Barishal Range,2025,27,14,69,65,0,662,113,12,60,139,2168,525,3,590,138,4585
+BMP,2025,2,1,16,3,1,96,15,5,15,33,211,51,0,127,45,621
+Chittagong Range,2025,54,105,287,61,3,940,245,50,179,436,4689,1150,57,2799,824,11879
+CMP,2025,4,32,30,42,0,167,42,20,47,108,625,140,4,491,166,1918
+Dhaka Range,2025,105,165,376,31,0,1324,283,73,182,516,5067,1188,29,2618,729,12686
+DMP,2025,29,215,168,78,40,685,208,77,187,560,2653,756,23,2066,646,8391
+GMP,2025,10,33,33,4,0,127,38,4,13,55,417,127,15,267,74,1217
+Khulna Range,2025,14,56,154,41,0,757,163,16,58,300,3002,708,34,1522,431,7256
+KMP,2025,3,12,11,10,0,51,24,7,19,55,207,58,4,281,83,825
+Mymensingh Range,2025,9,23,92,35,0,469,93,11,26,165,1856,434,4,980,426,4623
+Rajshahi Range,2025,32,55,137,29,0,1030,230,28,29,290,3329,720,60,2036,565,8570
+Railway Range,2025,0,25,5,1,0,2,1,0,0,47,67,17,0,112,31,308
+Rangpur Range,2025,11,30,101,3,0,838,222,9,23,269,3123,741,7,1612,456,7445
+RMP,2025,3,13,11,2,2,58,19,4,13,41,233,55,9,302,89,854
+RPMP,2025,1,6,1,1,0,48,5,5,0,27,137,35,1,74,20,361
+SMP,2025,0,8,7,15,0,42,9,5,12,41,258,65,11,138,98,709
+Sylhet Range,2025,14,28,88,11,0,372,61,26,22,199,1815,403,2,562,242,3845
+DMP,2010,47,220,245,363,3,1370,139,155,555,1915,7228,518,82,10535,144,23519
+CMP,2010,16,108,94,31,7,455,37,31,123,314,1831,51,0,866,99,4063
+KMP,2010,3,9,29,25,0,153,11,4,65,91,551,19,2,792,13,1767
+RMP,2010,4,20,21,9,15,157,9,12,53,106,578,3,4,332,248,1571
+BMP,2010,8,12,19,21,0,112,6,8,24,83,557,17,0,155,117,1139
+SMP,2010,12,33,33,34,1,104,14,12,33,154,866,14,0,154,20,1484
+Dhaka Range,2010,162,199,1153,362,7,4272,171,71,643,1477,19966,309,30,4459,993,34274
+Chittagong Range,2010,153,122,639,245,32,2915,111,87,429,998,12985,235,20,4730,612,24313
+Sylhet Range,2010,85,43,245,75,17,848,41,19,186,524,5266,30,4,905,172,8460
+Khulna Range,2010,74,125,513,110,15,2275,156,25,332,947,9954,211,96,2292,1238,18363
+Barishal Range,2010,38,37,207,112,3,991,65,13,214,374,6561,33,5,334,33,9020
+Rajshahi Range,2010,54,130,757,276,29,4095,105,35,442,1442,20654,134,10,3614,2509,34286
+Railway Range,2010,0,1,33,3,1,5,5,1,2,104,142,1,0,176,165,639
+DMP,2011,43,294,259,324,9,1538,118,142,589,2050,6766,358,77,10405,88,23060
+CMP,2011,16,66,83,43,15,408,30,19,125,355,1304,89,4,1541,28,4126
+KMP,2011,3,13,23,17,0,171,12,10,57,92,478,14,3,495,9,1397
+RMP,2011,2,14,18,3,3,146,16,11,55,101,665,8,1,253,199,1495
+BMP,2011,18,8,15,12,0,147,9,12,40,88,564,11,0,196,80,1200
+SMP,2011,9,24,37,42,1,158,16,16,31,129,857,8,0,178,32,1538
+Dhaka Range,2011,160,174,1199,361,17,4838,144,117,607,1731,19993,260,25,7497,1076,38199
+Chittagong Range,2011,164,116,640,241,10,4397,105,116,458,1130,13846,192,20,4122,555,26112
+Sylhet Range,2011,60,42,283,58,19,987,40,27,177,481,5473,19,0,1464,190,9320
+Khulna Range,2011,58,124,414,105,5,2796,119,32,395,902,10452,152,60,2168,1047,18829
+Barishal Range,2011,33,43,194,473,8,1060,60,20,214,331,6611,41,6,350,19,9463
+Rajshahi Range,2011,81,146,780,179,22,4735,121,58,385,1388,21174,114,11,2763,2276,34233
+Railway Range,2011,3,5,21,5,0,8,2,1,1,95,172,3,0,264,115,695
+DMP,2012,66,222,264,388,11,1637,149,136,592,2240,8296,284,94,8345,99,22823
+CMP,2012,10,66,88,74,18,281,27,26,112,283,1492,121,5,1976,41,4620
+KMP,2012,1,18,23,14,0,199,16,9,44,76,493,17,7,437,19,1373
+RMP,2012,2,24,37,9,6,122,11,15,52,136,728,5,3,229,130,1509
+BMP,2012,8,9,20,7,0,135,5,11,40,75,600,16,0,459,49,1434
+SMP,2012,8,15,37,52,3,140,6,28,42,116,784,11,1,186,4,1433
+Dhaka Range,2012,154,150,1244,426,7,5115,156,135,634,1742,21957,315,28,10918,1039,44020
+Chittagong Range,2012,129,103,664,267,17,4221,120,122,430,1134,15873,232,13,4613,531,28469
+Sylhet Range,2012,56,26,236,66,17,848,26,29,152,480,6018,38,3,1751,186,9932
+Khulna Range,2012,64,151,482,153,12,2564,167,46,359,761,11275,260,110,3372,1207,20983
+Barishal Range,2012,34,61,170,232,1,1168,55,13,186,277,6879,44,11,444,56,9631
+Rajshahi Range,2012,38,55,464,132,0,2281,54,47,155,554,11932,131,12,3120,2124,21099
+Rangpur Range,2012,20,53,354,85,2,2235,53,41,129,607,9586,32,2,1083,959,15241
+Railway Range,2012,3,11,31,2,0,1,5,1,0,117,199,5,0,331,134,840
+DMP,2013,47,241,270,338,37,1631,165,203,534,2196,7077,242,387,7927,106,21401
+CMP,2013,4,55,95,57,24,244,18,68,74,239,1281,79,37,1977,36,4288
+KMP,2013,2,30,31,23,0,153,12,20,39,78,494,23,14,442,9,1370
+RMP,2013,3,23,29,19,15,152,23,58,54,166,791,22,15,144,108,1622
+BMP,2013,11,11,17,8,1,110,8,25,27,46,487,16,4,607,9,1387
+SMP,2013,19,29,32,33,2,131,3,30,26,136,739,19,31,194,4,1428
+Dhaka Range,2013,147,175,1303,451,14,4766,149,182,686,1555,22429,296,133,11139,627,44052
+Chittagong Range,2013,143,132,758,262,56,3532,130,336,425,960,15863,320,91,4801,354,28163
+Sylhet Range,2013,53,35,266,75,21,834,37,42,109,398,5773,27,3,1620,186,9479
+Khulna Range,2013,76,126,520,181,1,2309,153,99,356,720,10968,253,148,2286,1873,20069
+Barishal Range,2013,40,31,209,115,1,1185,62,44,154,244,6920,27,15,502,28,9577
+Rajshahi Range,2013,47,63,480,168,0,2161,63,99,134,513,10810,163,100,2716,1896,19413
+Rangpur Range,2013,18,62,345,163,0,2389,54,50,142,533,10032,27,27,1213,1120,16175
+Railway Range,2013,3,8,38,3,0,4,2,1,2,98,266,3,2,264,81,775
+DMP,2014,47,265,262,332,7,1611,176,104,650,2130,6219,225,104,7063,222,19417
+CMP,2014,5,63,120,52,17,387,53,31,97,310,1457,121,10,2488,56,5267
+KMP,2014,2,29,22,17,0,206,11,3,44,101,522,34,2,599,10,1602
+RMP,2014,0,28,22,20,6,169,21,14,65,106,569,18,27,395,126,1586
+BMP,2014,7,16,15,3,0,94,3,9,35,48,375,16,1,759,5,1386
+SMP,2014,21,29,44,32,13,165,4,26,34,142,728,12,4,311,18,1583
+Dhaka Range,2014,184,221,1395,456,1,4907,203,127,619,1582,21716,331,64,12175,555,44536
+Chittagong Range,2014,138,169,792,193,9,4240,159,228,435,939,15503,490,53,6817,285,30450
+Sylhet Range,2014,54,30,277,54,11,745,27,41,93,354,5468,38,6,2026,202,9426
+Khulna Range,2014,80,125,520,277,15,2351,77,53,310,585,10247,381,152,2935,1766,19874
+Barishal Range,2014,36,37,200,51,0,1478,60,8,163,225,6892,36,19,813,31,10049
+Rajshahi Range,2014,55,73,463,138,0,2359,81,26,137,500,10353,249,64,3969,2070,20537
+Rangpur Range,2014,21,62,349,88,0,2573,45,32,126,549,10181,62,11,1756,1332,17187
+Railway Range,2014,1,8,33,3,0,6,0,0,1,89,170,10,3,395,110,829
+DMP,2015,45,205,239,226,26,1550,146,118,642,1711,5795,263,195,8365,201,19727
+CMP,2015,5,61,105,67,25,357,51,30,128,262,1497,101,40,2090,43,4862
+KMP,2015,9,15,30,19,0,146,7,3,49,95,574,21,13,659,2,1642
+RMP,2015,0,19,20,12,4,131,8,18,39,66,463,23,30,733,179,1745
+BMP,2015,2,11,15,5,0,110,4,8,33,50,371,17,0,557,2,1185
+SMP,2015,19,14,37,22,4,139,10,8,25,89,819,11,5,183,8,1393
+Dhaka Range,2015,151,164,1239,563,0,5042,204,118,472,1565,20501,365,68,12405,520,43377
+Chittagong Range,2015,107,133,688,151,28,3886,98,163,406,906,13618,498,59,8012,224,28977
+Sylhet Range,2015,26,26,252,70,3,943,33,43,76,326,5442,54,11,1575,211,9091
+Khulna Range,2015,41,112,439,151,2,2478,79,41,250,513,8972,330,119,3787,1217,18531
+Barishal Range,2015,31,47,175,58,1,1497,53,20,156,266,6767,26,22,1019,27,10165
+Rajshahi Range,2015,37,66,446,159,0,2339,70,40,72,441,9259,313,144,5797,2072,21255
+Rangpur Range,2015,17,50,328,44,0,2587,34,23,146,460,9898,53,10,1988,1355,16993
+Railway Range,2015,2,10,24,2,0,5,8,1,1,71,141,4,9,496,118,892
+DMP,2016,23,131,165,217,1,1651,103,72,547,1516,5407,244,88,9627,108,19900
+CMP,2016,6,58,90,63,11,344,30,16,88,196,1634,160,6,3457,31,6190
+KMP,2016,6,11,36,19,0,158,10,4,45,78,514,17,7,801,4,1710
+RMP,2016,5,18,15,5,5,108,11,14,40,66,357,13,12,1114,173,1956
+BMP,2016,6,7,16,8,0,105,2,4,41,45,444,15,0,655,1,1349
+SMP,2016,20,26,38,15,5,235,10,13,27,96,724,17,0,164,8,1398
+Dhaka Range,2016,118,127,881,162,1,3703,139,99,347,1114,13859,356,110,11366,234,32616
+Mymensingh Range,2016,4,15,221,97,0,825,16,29,57,256,4893,36,8,3099,118,9674
+Chittagong Range,2016,71,105,662,138,10,2612,106,99,367,821,12461,561,35,8998,161,27207
+Sylhet Range,2016,20,20,236,40,12,1116,18,46,69,310,5051,45,8,1723,237,8951
+Khulna Range,2016,47,80,370,88,7,1892,65,54,220,446,9315,374,109,4879,649,18595
+Barishal Range,2016,29,36,166,52,1,1538,38,22,155,187,6130,58,12,1679,12,10115
+Rajshahi Range,2016,30,49,383,115,0,1974,60,17,75,477,8304,345,82,9703,1555,23169
+Rangpur Range,2016,22,29,292,32,0,2025,27,29,133,453,8523,45,10,4425,1278,17323
+Railway Range,2016,1,10,20,1,0,160,4,3,2,49,131,5,0,518,111,1015
+DMP,2017,20,103,218,202,7,1779,85,132,554,1197,5315,157,108,13638,115,23630
+CMP,2017,2,71,70,80,0,350,7,21,92,267,1547,231,2,4260,44,7044
+KMP,2017,6,9,25,19,0,248,4,6,35,50,443,25,4,1706,32,2612
+RMP,2017,2,34,8,15,2,120,17,14,33,50,485,18,9,2021,189,3017
+BMP,2017,1,8,16,4,0,89,7,4,32,46,388,11,1,921,4,1532
+SMP,2017,5,18,32,60,3,120,6,12,25,101,669,13,0,301,15,1380
+Dhaka Range,2017,99,132,828,131,0,3598,123,95,360,973,12787,290,43,19646,197,39302
+Mymensingh Range,2017,8,16,248,107,0,1071,26,18,74,355,5897,36,4,5398,178,13436
+Chittagong Range,2017,64,74,626,114,0,1889,77,112,360,786,11676,581,16,12555,190,29120
+Sylhet Range,2017,31,31,303,30,2,861,19,40,103,399,4638,49,7,2246,223,8982
+Khulna Range,2017,33,51,338,62,9,1960,45,26,152,420,8917,342,89,9764,813,23021
+Barishal Range,2017,22,36,169,62,0,1451,20,16,161,182,5763,59,8,3441,5,11395
+Rajshahi Range,2017,36,38,368,132,0,1763,43,28,79,470,7817,343,62,12237,1240,24656
+Rangpur Range,2017,7,29,281,25,0,1771,30,16,103,477,8203,50,8,10262,2218,23480
+Railway Range,2017,0,7,19,2,0,3,0,3,0,60,100,3,1,588,136,922
+DMP,2018,17,83,216,216,17,1782,75,236,613,1290,5708,155,354,16215,173,27150
+CMP,2018,6,65,75,100,0,405,11,34,74,208,1446,365,136,4747,59,7731
+KMP,2018,2,6,19,18,0,145,3,3,32,63,385,24,1,1858,45,2604
+RMP,2018,0,27,22,14,3,177,17,12,45,64,597,35,19,2847,368,4247
+BMP,2018,3,8,17,6,0,101,6,6,44,42,441,16,1,1088,0,1779
+SMP,2018,8,12,33,44,0,159,1,39,32,85,731,16,2,520,34,1716
+Dhaka Range,2018,71,96,854,105,0,3014,82,122,304,931,11830,292,65,22682,155,40603
+Mymensingh Range,2018,5,10,265,54,1,1056,20,23,66,301,5294,53,139,6329,100,13716
+Chittagong Range,2018,44,84,728,110,1,1915,93,151,325,701,11445,723,122,13338,145,29925
+Sylhet Range,2018,25,18,272,19,1,885,13,94,84,390,4648,62,19,2438,194,9162
+Khulna Range,2018,26,54,392,27,3,1530,29,14,190,403,7402,369,207,10076,531,21253
+Barishal Range,2018,20,24,166,55,0,1321,20,20,132,205,4975,54,56,4384,2,11434
+Rajshahi Range,2018,21,53,408,126,0,1786,46,27,95,392,6979,257,116,13764,1538,25608
+Rangpur Range,2018,13,13,307,19,0,1908,16,18,91,372,7474,72,57,10921,997,22278
+Railway Range,2018,0,4,27,3,0,4,1,5,0,65,108,2,0,611,159,989
+GMP,2018,0,4,26,4,0,46,3,5,7,32,183,18,15,528,1,872
+RPMP,2018,1,1,3,2,0,19,8,2,3,17,90,2,1,203,0,352
+DMP,2019,1,10,19,10,0,118,9,6,49,127,411,6,3,1370,14,2153
+CMP,2019,0,3,9,5,0,22,0,5,6,15,125,38,0,449,1,678
+KMP,2019,1,0,4,1,0,8,0,0,6,4,16,2,0,272,3,317
+RMP,2019,0,4,1,1,1,11,0,0,4,6,52,3,0,283,35,401
+BMP,2019,0,0,0,0,0,14,1,0,4,6,49,1,0,91,0,166
+SMP,2019,0,2,5,3,0,15,0,13,2,2,55,0,0,44,2,143
+Dhaka Range,2019,7,11,75,10,0,216,12,13,28,70,889,18,3,1731,6,3089
+Mymensingh Range,2019,1,1,23,1,0,87,2,6,5,24,405,5,2,435,7,1004
+Chittagong Range,2019,4,11,74,4,0,147,6,10,25,51,891,54,1,1108,10,2396
+Sylhet Range,2019,4,5,20,4,0,67,1,8,7,33,412,1,3,139,21,725
+Khulna Range,2019,4,4,37,0,0,99,2,2,7,36,544,13,3,814,20,1585
+Barishal Range,2019,2,3,16,2,0,86,3,2,16,23,378,1,0,363,0,895
+Rajshahi Range,2019,5,8,29,6,0,99,8,2,5,40,469,25,15,1166,134,2011
+Rangpur Range,2019,1,2,33,0,0,116,0,0,8,38,625,4,0,551,94,1472
+Railway Range,2019,0,1,2,0,0,0,0,0,0,5,9,0,0,55,12,84
+GMP,2019,2,3,3,1,0,22,1,2,2,8,65,3,0,130,2,244
+RPMP,2019,0,0,1,0,0,12,1,0,0,6,33,0,0,68,0,121`;
+
+function parseData(csv){
+  const lines=csv.trim().split('\n').filter(l=>l.trim());
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    const p=lines[i].split(',');
+    if(p.length<17)continue;
+    const unit=p[0].trim(), year=parseInt(p[1]);
+    if(!unit||isNaN(year))continue;
+    const obj={unit,year};
+    CATS.forEach((c,idx)=>{ obj[c]=parseFloat(p[idx+2])||0; });
+    obj['Total Cases']=parseFloat(p[16])||0;
+    if(obj['Total Cases']===0&&CATS.every(c=>obj[c]===0))continue;
+    rows.push(obj);
+  }
+  return rows;
+}
+
+const DATA=parseData(CSV);
+const ALL_YEARS=[...new Set(DATA.map(r=>r.year))].sort();
+const ALL_UNITS=[...new Set(DATA.map(r=>r.unit))].sort();
+const ALL_CATS=['Total Cases',...CATS];
+const MIN_YR=Math.min(...ALL_YEARS), MAX_YR=Math.max(...ALL_YEARS);
+const YR_RANGE=MAX_YR-MIN_YR;
+
+// ═══════ STATE ═══════
+const S={
+  yrFrom:MIN_YR, yrTo:MAX_YR,
+  cat:'Total Cases', view:'trend', unitFilter:'all',
+  yoyCat:'Total Cases', yoyUnit:'all',
+  cmpCat:'Total Cases', cmpUnits:['Dhaka Range','Chittagong Range','DMP'],
+  hmCat:'Total Cases', hmScale:'linear',
+  rankCat:'Total Cases', rankGroup:'unit', rankYear:'all',
+  anomCat:'Total Cases', anomType:'both',
+  tblYear:'all', tblUnit:'all', tblSearch:'', tblPage:1, tblSort:{col:'Total Cases',dir:-1}
+};
+
+// ═══════ HELPERS ═══════
+const fmt=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':Math.round(n).toLocaleString();
+const fmtN=n=>Math.round(n).toLocaleString();
+const catLabel=c=>c==='Woman & Child Repression'?'Women & Child':c;
+
+function getFiltered(yrFrom=S.yrFrom,yrTo=S.yrTo,unit=S.unitFilter){
+  return DATA.filter(r=>r.year>=yrFrom&&r.year<=yrTo&&(unit==='all'||r.unit===unit));
+}
+function sumBy(rows,cat){return rows.reduce((a,b)=>a+(b[cat]||0),0);}
+function yearTotal(year,cat,unit='all'){
+  return DATA.filter(r=>r.year===year&&(unit==='all'||r.unit===unit)).reduce((a,b)=>a+(b[cat]||0),0);
+}
+
+// Color palette for multi-unit
+const PALETTE=['#1d1d1f','#0071e3','#ff9500','#34c759','#ff3b30','#5e5ce6'];
+
+// ═══════ CHART OPTIONS BASE ═══════
+const baseOpts={
+  responsive:true, maintainAspectRatio:false,
+  plugins:{
+    legend:{display:false},
+    tooltip:{backgroundColor:'#1d1d1f',titleColor:'#fff',bodyColor:'rgba(255,255,255,.75)',padding:12,cornerRadius:10,
+      titleFont:{size:13,weight:'600',family:'-apple-system,sans-serif'},
+      bodyFont:{size:12,family:'-apple-system,sans-serif'}}
+  },
+  scales:{
+    x:{grid:{display:false},border:{display:false},ticks:{color:'#6e6e73',font:{size:11}}},
+    y:{grid:{color:'rgba(0,0,0,.05)'},border:{display:false},ticks:{color:'#6e6e73',font:{size:11},callback:v=>fmt(v)}}
+  }
+};
+function mergeOpts(a,b){ var r=Object.assign({},a,b); r.plugins=Object.assign({},a.plugins,b.plugins||{}); r.scales=Object.assign({},a.scales,b.scales||{}); return r; }
+
+// ═══════ CHART REGISTRY ═══════
+const CHARTS={};
+function mkChart(id,type,data,opts){
+  if(CHARTS[id])try{CHARTS[id].destroy();}catch(e){}
+  const ctx=document.getElementById(id);
+  if(!ctx)return;
+  CHARTS[id]=new Chart(ctx,{type,data,options:opts});
+  return CHARTS[id];
+}
+
+// ═══════════════════════════════
+//   OVERVIEW PAGE
+// ═══════════════════════════════
+function renderHero(){
+  const all=DATA;
+  const total=all.reduce((a,b)=>a+b['Total Cases'],0);
+  const byYear={};
+  ALL_YEARS.forEach(y=>{byYear[y]=DATA.filter(r=>r.year===y).reduce((a,b)=>a+b['Total Cases'],0);});
+  const peakY=Object.entries(byYear).sort((a,b)=>b[1]-a[1])[0];
+  const maxMurder=Math.max(...DATA.map(r=>r['Murder']));
+  const totalNarco=DATA.reduce((a,b)=>a+b['Narcotics'],0);
+  const items=[
+    {lbl:'Total Cases (All Years)',val:fmt(total),sub:'Across all units'},
+    {lbl:'Peak Year',val:peakY[0],sub:fmt(peakY[1])+' total cases'},
+    {lbl:'Max Murders (Single Unit/Year)',val:fmtN(maxMurder),sub:'Dhaka Range 2014'},
+    {lbl:'Narcotics Cases',val:fmt(totalNarco),sub:'Largest single category'},
+  ];
+  const g=document.getElementById('heroGrid');
+  g.innerHTML=items.map(i=>`<div class="hero-card"><div class="hero-lbl">${i.lbl}</div><div class="hero-val">${i.val}</div><div class="hero-sub">${i.sub}</div></div>`).join('');
+}
+
+function initSlider(){
+  const from=document.getElementById('sliderFrom'), to=document.getElementById('sliderTo');
+  const fill=document.getElementById('rangeFill');
+  function update(){
+    let f=+from.value, t=+to.value;
+    if(f>t){[f,t]=[t,f]; from.value=f; to.value=t;}
+    S.yrFrom=MIN_YR+Math.round(f/100*YR_RANGE);
+    S.yrTo=MIN_YR+Math.round(t/100*YR_RANGE);
+    document.getElementById('yrFromLbl').textContent=S.yrFrom;
+    document.getElementById('yrToLbl').textContent=S.yrTo;
+    fill.style.left=(Math.min(f,t))+'%';
+    fill.style.width=Math.abs(t-f)+'%';
+    renderOverviewCharts();
+  }
+  from.addEventListener('input',update); to.addEventListener('input',update);
+  fill.style.left='0%'; fill.style.width='100%';
+}
+
+function initCatPills(){
+  const c=document.getElementById('catPills');
+  ['Total Cases',...CATS.slice(0,8)].forEach(cat=>{
+    const b=document.createElement('button'); b.className='pill'+(cat===S.cat?' active':'');
+    b.textContent=catLabel(cat);
+    b.onclick=()=>{ S.cat=cat; c.querySelectorAll('.pill').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderOverviewCharts(); };
+    c.appendChild(b);
+  });
+}
+
+function initViewPills(){
+  document.querySelectorAll('#viewPills .pill').forEach(b=>{
+    b.onclick=()=>{ S.view=b.dataset.view; document.querySelectorAll('#viewPills .pill').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderMainChart(); };
+  });
+}
+
+function initUnitFilter(){
+  const sel=document.getElementById('unitFilter');
+  ALL_UNITS.forEach(u=>{const o=document.createElement('option');o.value=u;o.textContent=u;sel.appendChild(o);});
+  sel.onchange=e=>{S.unitFilter=e.target.value;renderMainChart();};
+}
+
+function renderMainChart(){
+  const cat=S.cat, years=ALL_YEARS.filter(y=>y>=S.yrFrom&&y<=S.yrTo);
+  document.getElementById('mainChartTitle').textContent=`${catLabel(cat)} Over Time`;
+  document.getElementById('mainChartSub').textContent=S.unitFilter==='all'?'All units combined':'Unit: '+S.unitFilter;
+
+  if(S.view==='trend'){
+    const vals=years.map(y=>yearTotal(y,cat,S.unitFilter));
+    mkChart('mainChart','line',{
+      labels:years,
+      datasets:[{data:vals,borderColor:'#1d1d1f',backgroundColor:'rgba(0,0,0,.04)',borderWidth:2,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#fff',pointBorderColor:'#1d1d1f',pointBorderWidth:2,fill:true,tension:.3}]
+    },baseOpts);
+  } else if(S.view==='compare'){
+    const units=ALL_UNITS, vals=units.map(u=>{
+      return DATA.filter(r=>r.unit===u&&r.year>=S.yrFrom&&r.year<=S.yrTo).reduce((a,b)=>a+(b[cat]||0),0);
+    });
+    const sorted=[...units.map((u,i)=>({u,v:vals[i]}))].sort((a,b)=>b.v-a.v);
+    mkChart('mainChart','bar',{
+      labels:sorted.map(s=>s.u),
+      datasets:[{data:sorted.map(s=>s.v),backgroundColor:sorted.map((_,i)=>i===0?'#1d1d1f':'rgba(0,0,0,.1)'),borderRadius:6,borderSkipped:false}]
+    },baseOpts);
+  } else {
+    const dispCats=['Narcotics','Other Cases','Woman & Child Repression','Theft','Murder','Robbery'];
+    const pal=['#1d1d1f','#5e5ce6','#0071e3','#34c759','#ff9500','#ff3b30'];
+    mkChart('mainChart','bar',{
+      labels:years,
+      datasets:dispCats.map((c2,i)=>({
+        label:catLabel(c2),
+        data:years.map(y=>DATA.filter(r=>r.year===y&&(S.unitFilter==='all'||r.unit===S.unitFilter)).reduce((a,b)=>a+(b[c2]||0),0)),
+        backgroundColor:pal[i],borderRadius:i===dispCats.length-1?6:0,borderSkipped:false,stack:'s'
+      }))
+    },{...baseOpts,plugins:{...baseOpts.plugins,legend:{display:true,position:'top',align:'start',labels:{boxWidth:10,boxHeight:10,borderRadius:3,useBorderRadius:true,font:{size:11},color:'#6e6e73',padding:12}}}});
+  }
+}
+
+function renderDonut(){
+  const rows=getFiltered();
+  const totals=CATS.map(c=>({cat:c,val:sumBy(rows,c)})).sort((a,b)=>b.val-a.val);
+  const top=totals.slice(0,7), other=totals.slice(7).reduce((a,b)=>a+b.val,0);
+  if(other>0)top.push({cat:'Others',val:other});
+  const pal=['#1d1d1f','#3a3a3c','#636366','#8e8e93','#c7c7cc','#d1d1d6','#e5e5ea','#f2f2f7'];
+  document.getElementById('donutSub').textContent=`${S.yrFrom}–${S.yrTo}`;
+  mkChart('donutChart','doughnut',{
+    labels:top.map(s=>catLabel(s.cat)),
+    datasets:[{data:top.map(s=>s.val),backgroundColor:pal,borderWidth:0,hoverOffset:6}]
+  },{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:true,position:'right',labels:{boxWidth:10,boxHeight:10,borderRadius:3,useBorderRadius:true,font:{size:11},color:'#6e6e73',padding:8}},tooltip:{backgroundColor:'#1d1d1f',titleColor:'#fff',bodyColor:'rgba(255,255,255,.75)',padding:12,cornerRadius:10,callbacks:{label:ctx=>` ${fmtN(ctx.raw)} cases`}}}});
+}
+
+function renderBar(){
+  const rows=getFiltered();
+  const byUnit={};
+  rows.forEach(r=>{if(!byUnit[r.unit])byUnit[r.unit]=0;byUnit[r.unit]+=(r[S.cat]||0);});
+  const sorted=Object.entries(byUnit).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  document.getElementById('barSub').textContent=`Top 10 · ${S.yrFrom}–${S.yrTo}`;
+  mkChart('barChart','bar',{
+    labels:sorted.map(s=>s[0]),
+    datasets:[{data:sorted.map(s=>s[1]),backgroundColor:sorted.map((_,i)=>i<3?'#1d1d1f':'rgba(0,0,0,.1)'),borderRadius:5,borderSkipped:false}]
+  },{...baseOpts,indexAxis:'y',scales:{x:{...baseOpts.scales.x,grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#6e6e73',font:{size:10},callback:v=>fmt(v)}},y:{...baseOpts.scales.y,grid:{display:false}}}});
+}
+
+function renderOverviewCharts(){ renderMainChart(); renderDonut(); renderBar(); }
+
+// ═══════════════════════════════
+//   TRENDS & YOY PAGE
+// ═══════════════════════════════
+function initYoYFilters(){
+  const catSel=document.getElementById('yoyCat');
+  ALL_CATS.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=catLabel(c);catSel.appendChild(o);});
+  catSel.value='Total Cases';
+  catSel.onchange=e=>{S.yoyCat=e.target.value;renderYoY();};
+  const unitSel=document.getElementById('yoyUnit');
+  ALL_UNITS.forEach(u=>{const o=document.createElement('option');o.value=u;o.textContent=u;unitSel.appendChild(o);});
+  unitSel.onchange=e=>{S.yoyUnit=e.target.value;renderYoY();};
+}
+
+function renderYoY(){
+  const cat=S.yoyCat, unit=S.yoyUnit;
+  const years=ALL_YEARS.filter(y=>y>=2010&&y<=2025);
+  const vals=years.map(y=>yearTotal(y,cat,unit));
+  const pcts=years.map((y,i)=>{
+    if(i===0)return null;
+    const prev=vals[i-1]; if(prev===0)return null;
+    return ((vals[i]-prev)/prev)*100;
+  });
+  document.getElementById('yoyChartSub').textContent=`${catLabel(cat)} · ${unit==='all'?'All Units':unit}`;
+
+  // YoY % bar chart
+  const validYears=years.slice(1), validPcts=pcts.slice(1);
+  mkChart('yoyChart','bar',{
+    labels:validYears,
+    datasets:[{
+      data:validPcts,
+      backgroundColor:validPcts.map(v=>v===null?'transparent':v>0?'rgba(255,59,48,.7)':'rgba(52,199,89,.7)'),
+      borderColor:validPcts.map(v=>v===null?'transparent':v>0?'#ff3b30':'#34c759'),
+      borderWidth:1, borderRadius:4, borderSkipped:false
+    }]
+  },{...baseOpts,plugins:{...baseOpts.plugins,tooltip:{...baseOpts.plugins.tooltip,callbacks:{label:ctx=>ctx.raw===null?'No data':` ${ctx.raw.toFixed(1)}%`}}},scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{callback:v=>v+'%'}}}});
+
+  // Absolute line
+  mkChart('yoyAbsChart','line',{
+    labels:years,
+    datasets:[{data:vals,borderColor:'#1d1d1f',backgroundColor:'rgba(0,0,0,.04)',borderWidth:2,pointRadius:4,pointHoverRadius:6,pointBackgroundColor:'#fff',pointBorderColor:'#1d1d1f',pointBorderWidth:2,fill:true,tension:.3}]
+  },baseOpts);
+
+  // Summary table
+  const tbl=document.getElementById('yoySummaryTable');
+  tbl.innerHTML=`<thead><tr style="border-bottom:1px solid var(--border)">
+    <th style="padding:8px 16px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;text-align:left">Year</th>
+    <th style="padding:8px 16px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;text-align:right">Cases</th>
+    <th style="padding:8px 16px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;text-align:right">YoY Change</th>
+  </tr></thead>`;
+  const tb=document.createElement('tbody');
+  years.forEach((y,i)=>{
+    const pct=pcts[i];
+    const badge=pct===null?'<span class="yoy-badge neu">—</span>':pct>0?`<span class="yoy-badge up">↑ ${pct.toFixed(1)}%</span>`:`<span class="yoy-badge dn">↓ ${Math.abs(pct).toFixed(1)}%</span>`;
+    const tr=document.createElement('tr');
+    tr.style.borderBottom='1px solid var(--border)';
+    tr.innerHTML=`<td style="padding:8px 16px;font-size:13px;font-weight:500">${y}</td><td style="padding:8px 16px;font-size:13px;text-align:right">${fmtN(vals[i])}</td><td style="padding:8px 16px;text-align:right">${badge}</td>`;
+    tb.appendChild(tr);
+  });
+  tbl.appendChild(tb);
+}
+
+// ═══════════════════════════════
+//   MULTI-UNIT COMPARE PAGE
+// ═══════════════════════════════
+function initCompare(){
+  const catSel=document.getElementById('cmpCat');
+  ALL_CATS.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=catLabel(c);catSel.appendChild(o);});
+  catSel.value='Total Cases';
+  catSel.onchange=e=>{S.cmpCat=e.target.value;renderCompare();};
+
+  const grid=document.getElementById('unitCheckGrid');
+  ALL_UNITS.forEach((u,idx)=>{
+    const color=PALETTE[S.cmpUnits.indexOf(u)%PALETTE.length];
+    const div=document.createElement('div');
+    div.className='unit-check'+(S.cmpUnits.includes(u)?' checked':'');
+    if(S.cmpUnits.includes(u)) div.style.background=PALETTE[S.cmpUnits.indexOf(u)];
+    div.innerHTML=`<span class="unit-dot"></span>${u}`;
+    div.dataset.unit=u;
+    div.onclick=()=>{
+      if(S.cmpUnits.includes(u)){
+        if(S.cmpUnits.length<=1)return;
+        S.cmpUnits=S.cmpUnits.filter(x=>x!==u);
+        div.classList.remove('checked'); div.style.background='';
+      } else {
+        if(S.cmpUnits.length>=6)return;
+        S.cmpUnits.push(u);
+        div.classList.add('checked');
+        div.style.background=PALETTE[S.cmpUnits.indexOf(u)%PALETTE.length];
+      }
+      renderCompare();
+    };
+    grid.appendChild(div);
+  });
+}
+
+function renderCompare(){
+  const cat=S.cmpCat;
+  const years=ALL_YEARS;
+  document.getElementById('cmpChartTitle').textContent=`${catLabel(cat)} — Unit Comparison`;
+  document.getElementById('cmpChartSub').textContent=`${S.cmpUnits.length} units selected`;
+
+  const datasets=S.cmpUnits.map((u,i)=>({
+    label:u,
+    data:years.map(y=>{const r=DATA.find(d=>d.unit===u&&d.year===y); return r?r[cat]:null;}),
+    borderColor:PALETTE[i%PALETTE.length],
+    backgroundColor:'transparent',
+    borderWidth:2.5,
+    pointRadius:4, pointHoverRadius:6,
+    pointBackgroundColor:'#fff',
+    pointBorderColor:PALETTE[i%PALETTE.length],
+    pointBorderWidth:2,
+    tension:.3, spanGaps:false
+  }));
+
+  mkChart('cmpChart','line',{labels:years,datasets},{
+    ...baseOpts,
+    plugins:{
+      ...baseOpts.plugins,
+      legend:{display:true,position:'top',align:'start',labels:{boxWidth:10,boxHeight:10,borderRadius:3,useBorderRadius:true,font:{size:12},padding:14,color:'#1d1d1f',generateLabels:chart=>chart.data.datasets.map((ds,i)=>({text:ds.label,fillStyle:PALETTE[i%PALETTE.length],strokeStyle:PALETTE[i%PALETTE.length],lineWidth:0,hidden:false,index:i}))}}
+    }
+  });
+
+  // Totals bar
+  const container=document.getElementById('cmpTotalsBar');
+  const totals=S.cmpUnits.map(u=>({u,v:DATA.filter(r=>r.unit===u).reduce((a,b)=>a+(b[cat]||0),0)}));
+  const max=Math.max(...totals.map(t=>t.v));
+  container.innerHTML=totals.map((t,i)=>`
+    <div class="rank-row">
+      <div style="width:12px;height:12px;border-radius:50%;background:${PALETTE[i%PALETTE.length]};flex-shrink:0"></div>
+      <div class="rank-name">${t.u}</div>
+      <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(t.v/max*100).toFixed(1)}%;background:${PALETTE[i%PALETTE.length]}"></div></div>
+      <div class="rank-val">${fmt(t.v)}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════
+//   HEATMAP PAGE
+// ═══════════════════════════════
+function initHeatmap(){
+  const sel=document.getElementById('hmCat');
+  ALL_CATS.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=catLabel(c);sel.appendChild(o);});
+  sel.onchange=e=>{S.hmCat=e.target.value;renderHeatmap();};
+  document.querySelectorAll('#hmScalePills .pill').forEach(b=>{
+    b.onclick=()=>{ S.hmScale=b.dataset.scale; document.querySelectorAll('#hmScalePills .pill').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderHeatmap(); };
+  });
+}
+
+function interpolateColor(t){
+  // white → #0071e3 → #1d1d1f
+  if(t<.5){
+    const f=t*2;
+    const r=Math.round(255+(0-255)*f), g=Math.round(255+(113-255)*f), b=Math.round(255+(227-255)*f);
+    return `rgb(${r},${g},${b})`;
+  } else {
+    const f=(t-.5)*2;
+    const r=Math.round(0+(29-0)*f), g=Math.round(113+(29-113)*f), b=Math.round(227+(31-227)*f);
+    return `rgb(${r},${g},${b})`;
+  }
+}
+
+function renderHeatmap(){
+  const cat=S.hmCat;
+  const units=ALL_UNITS, years=ALL_YEARS;
+  const allVals=[];
+  const grid={};
+  units.forEach(u=>{ grid[u]={};
+    years.forEach(y=>{ const r=DATA.find(d=>d.unit===u&&d.year===y); const v=r?(r[cat]||0):0; grid[u][y]=v; allVals.push(v); });
+  });
+  const maxV=Math.max(...allVals), minV=0;
+
+  function norm(v){ 
+    if(maxV===minV)return 0;
+    if(S.hmScale==='log'){ const lv=Math.log1p(v),lm=Math.log1p(maxV); return lm>0?lv/lm:0; }
+    return (v-minV)/(maxV-minV);
+  }
+
+  const tbl=document.getElementById('hmTable');
+  let html=`<tr><th class="unit-th">Unit</th>${years.map(y=>`<th>${y}</th>`).join('')}</tr>`;
+  units.forEach(u=>{
+    html+=`<tr><th class="unit-th" style="font-size:11px;color:var(--text1);white-space:nowrap">${u}</th>`;
+    years.forEach(y=>{
+      const v=grid[u][y], t=norm(v), bg=interpolateColor(t);
+      const txtColor=t>.55?'rgba(255,255,255,.9)':'rgba(0,0,0,.7)';
+      html+=`<td><div class="hm-cell" style="background:${bg}" data-unit="${u}" data-year="${y}" data-val="${fmtN(v)}" data-cat="${catLabel(cat)}"><span class="hm-val" style="color:${txtColor};font-size:9px">${v>0?fmt(v):''}</span></div></td>`;
+    });
+    html+='</tr>';
+  });
+  tbl.innerHTML=html;
+
+  // Hover tooltip
+  const tooltip=document.getElementById('hmTooltip');
+  tbl.querySelectorAll('.hm-cell').forEach(cell=>{
+    cell.addEventListener('mouseenter',e=>{
+      tooltip.textContent=`${cell.dataset.unit} · ${cell.dataset.year}: ${cell.dataset.val} ${cell.dataset.cat}`;
+      tooltip.classList.add('show');
+    });
+    cell.addEventListener('mousemove',e=>{ tooltip.style.left=(e.pageX+14)+'px'; tooltip.style.top=(e.pageY-28)+'px'; });
+    cell.addEventListener('mouseleave',()=>tooltip.classList.remove('show'));
+    cell.addEventListener('click',()=>openModal(cell.dataset.unit));
+  });
+
+  // Legend gradient
+  const lb=document.getElementById('hmLegendBar');
+  lb.innerHTML='';
+  lb.style.background=`linear-gradient(to right, ${interpolateColor(0)}, ${interpolateColor(.5)}, ${interpolateColor(1)})`;
+  lb.style.flex='1'; lb.style.maxWidth='200px';
+}
+
+// ═══════════════════════════════
+//   RANKINGS PAGE
+// ═══════════════════════════════
+function initRanking(){
+  const sel=document.getElementById('rankCat');
+  ALL_CATS.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=catLabel(c);sel.appendChild(o);});
+  sel.onchange=e=>{S.rankCat=e.target.value;renderRanking();};
+  document.querySelectorAll('#rankGroupPills .pill').forEach(b=>{
+    b.onclick=()=>{ S.rankGroup=b.dataset.group; document.querySelectorAll('#rankGroupPills .pill').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderRanking(); };
+  });
+  const yr=document.getElementById('rankYear');
+  ALL_YEARS.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;yr.appendChild(o);});
+  yr.onchange=e=>{S.rankYear=e.target.value;renderRanking();};
+}
+
+function renderRankList(container,items,title){
+  const max=items[0]?.v||1;
+  container.innerHTML=items.map((item,i)=>`
+    <div class="rank-row">
+      <div class="rank-num${i<3?' top3':''}">${i+1}</div>
+      <div class="rank-name">${item.k}</div>
+      <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(item.v/max*100).toFixed(1)}%"></div></div>
+      <div class="rank-val">${fmt(item.v)}</div>
+    </div>`).join('');
+}
+
+function renderRanking(){
+  const cat=S.rankCat, yr=S.rankYear;
+  const rows=DATA.filter(r=>yr==='all'||r.year===+yr);
+
+  if(S.rankGroup==='unit'){
+    document.getElementById('rankTitle1').textContent='Top Units — '+catLabel(cat);
+    const byUnit={};
+    rows.forEach(r=>{ if(!byUnit[r.unit])byUnit[r.unit]=0; byUnit[r.unit]+=(r[cat]||0); });
+    const sorted=Object.entries(byUnit).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>({k,v}));
+    renderRankList(document.getElementById('rankList1'),sorted);
+  } else {
+    document.getElementById('rankTitle1').textContent='Top Years — '+catLabel(cat);
+    const byYear={};
+    rows.forEach(r=>{ if(!byYear[r.year])byYear[r.year]=0; byYear[r.year]+=(r[cat]||0); });
+    const sorted=Object.entries(byYear).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({k,v}));
+    renderRankList(document.getElementById('rankList1'),sorted);
+  }
+
+  // Category totals
+  document.getElementById('rankTitle2').textContent='All Categories — '+(yr==='all'?'All Years':yr);
+  const catTotals=CATS.map(c=>({k:catLabel(c),v:rows.reduce((a,b)=>a+(b[c]||0),0)})).sort((a,b)=>b.v-a.v);
+  renderRankList(document.getElementById('rankList2'),catTotals);
+}
+
+// ═══════════════════════════════
+//   ANOMALIES PAGE
+// ═══════════════════════════════
+function initAnomalies(){
+  const sel=document.getElementById('anomCat');
+  ALL_CATS.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=catLabel(c);sel.appendChild(o);});
+  sel.onchange=e=>{S.anomCat=e.target.value;renderAnomalies();};
+  document.querySelectorAll('#anomTypePills .pill').forEach(b=>{
+    b.onclick=()=>{ S.anomType=b.dataset.type; document.querySelectorAll('#anomTypePills .pill').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderAnomalies(); };
+  });
+}
+
+function detectAnomalies(cat,type){
+  const results=[];
+  ALL_UNITS.forEach(u=>{
+    const uRows=DATA.filter(r=>r.unit===u&&(r[cat]||0)>0);
+    if(uRows.length<3)return;
+    const vals=uRows.map(r=>r[cat]||0);
+    const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+    const std=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/vals.length);
+    if(std===0)return;
+    uRows.forEach(r=>{
+      const v=r[cat]||0, z=(v-mean)/std;
+      if(Math.abs(z)>=2){
+        const t=z>0?'high':'low';
+        if(type==='both'||type===t) results.push({unit:u,year:r.year,val:v,mean,std,z,type:t});
+      }
+    });
+  });
+  return results.sort((a,b)=>Math.abs(b.z)-Math.abs(a.z));
+}
+
+function renderAnomalies(){
+  const cat=S.anomCat, anomalies=detectAnomalies(cat,S.anomType);
+  document.getElementById('anomSub').textContent=`${anomalies.length} anomalies detected in ${catLabel(cat)}`;
+
+  // Scatter plot
+  const high=anomalies.filter(a=>a.type==='high'), low=anomalies.filter(a=>a.type==='low');
+  mkChart('anomChart','scatter',{
+    datasets:[
+      {label:'Spike ↑',data:high.map(a=>({x:a.year,y:a.val})),backgroundColor:'rgba(255,59,48,.7)',pointRadius:7,pointHoverRadius:9},
+      {label:'Drop ↓',data:low.map(a=>({x:a.year,y:a.val})),backgroundColor:'rgba(52,199,89,.7)',pointRadius:7,pointHoverRadius:9},
+    ]
+  },{...baseOpts,plugins:{...baseOpts.plugins,legend:{display:true,position:'top',align:'start',labels:{boxWidth:10,boxHeight:10,borderRadius:3,useBorderRadius:true,font:{size:11},color:'#6e6e73',padding:12}}}});
+
+  // List
+  const list=document.getElementById('anomList');
+  list.innerHTML='<div class="anomaly-list">'+anomalies.slice(0,20).map(a=>`
+    <div class="anomaly-item ${a.type}" style="cursor:pointer" onclick="openModal('${a.unit.replace(/'/g,"\\'")}')">
+      <div><span class="anomaly-flag anomaly-${a.type}"></span></div>
+      <div class="anomaly-item-main">${a.unit} · ${a.year}</div>
+      <div class="anomaly-item-val">${fmtN(a.val)} (${a.z>0?'+':''}${a.z.toFixed(1)}σ)</div>
+    </div>`).join('')+'</div>';
+
+  // Distribution bar chart
+  const distByUnit={};
+  anomalies.forEach(a=>{ if(!distByUnit[a.unit])distByUnit[a.unit]=0; distByUnit[a.unit]++; });
+  const sorted=Object.entries(distByUnit).sort((a,b)=>b[1]-a[1]);
+  mkChart('anomDistChart','bar',{
+    labels:sorted.map(s=>s[0]),
+    datasets:[{data:sorted.map(s=>s[1]),backgroundColor:'rgba(0,0,0,.12)',borderColor:'#1d1d1f',borderWidth:1,borderRadius:5,borderSkipped:false}]
+  },{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>Math.round(v)}}}});
+}
+
+// ═══════════════════════════════
+//   UNIT DEEP-DIVE MODAL
+// ═══════════════════════════════
+let modalChartInst=null;
+function openModal(unit){
+  const rows=DATA.filter(r=>r.unit===unit);
+  if(!rows.length)return;
+  document.getElementById('modalTitle').textContent=unit;
+  document.getElementById('modalSub').textContent='Crime statistics across all available years';
+
+  const total=rows.reduce((a,b)=>a+b['Total Cases'],0);
+  const maxY=rows.reduce((a,b)=>b['Total Cases']>a['Total Cases']?b:a);
+  const latestY=Math.max(...rows.map(r=>r.year));
+  const stats=[
+    {lbl:'Total Cases (All Years)',val:fmtN(total),sub:''},
+    {lbl:'Peak Year',val:maxY.year,sub:fmtN(maxY['Total Cases'])+' cases'},
+    {lbl:'Latest Data Year',val:latestY,sub:''},
+  ];
+  document.getElementById('modalStats').innerHTML=stats.map(s=>`<div class="modal-stat"><div class="modal-stat-lbl">${s.lbl}</div><div class="modal-stat-val">${s.val}</div><div class="modal-stat-sub">${s.sub}</div></div>`).join('');
+
+  const years=rows.map(r=>r.year).sort(), vals=years.map(y=>rows.find(r=>r.year===y)['Total Cases']);
+  if(modalChartInst)try{modalChartInst.destroy();}catch(e){}
+  modalChartInst=new Chart(document.getElementById('modalLineChart'),{
+    type:'line',
+    data:{labels:years,datasets:[{data:vals,borderColor:'#1d1d1f',backgroundColor:'rgba(0,0,0,.04)',borderWidth:2,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#fff',pointBorderColor:'#1d1d1f',pointBorderWidth:2,fill:true,tension:.3}]},
+    options:baseOpts
+  });
+
+  // Breakdown latest year
+  const latest=rows.find(r=>r.year===latestY);
+  const breakdown=CATS.map(c=>({c,v:latest[c]||0})).sort((a,b)=>b.v-a.v).slice(0,8);
+  const maxB=breakdown[0]?.v||1;
+  document.getElementById('modalBreakdown').innerHTML=breakdown.map(b=>`
+    <div class="rank-row">
+      <div class="rank-name" style="width:160px;flex:none">${catLabel(b.c)}</div>
+      <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(b.v/maxB*100).toFixed(1)}%"></div></div>
+      <div class="rank-val">${fmtN(b.v)}</div>
+    </div>`).join('');
+
+  document.getElementById('unitModal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+document.getElementById('modalClose').onclick=closeModal;
+document.getElementById('unitModal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeModal(); });
+function closeModal(){ document.getElementById('unitModal').classList.remove('open'); document.body.style.overflow=''; }
+
+// ═══════════════════════════════
+//   BROWSE DATA TABLE
+// ═══════════════════════════════
+const TBL_COLS=['unit','year','Total Cases','Narcotics','Other Cases','Murder','Woman & Child Repression','Theft','Arms Act','Robbery'];
+const PAGE_SZ=12;
+
+function initBrowse(){
+  const yr=document.getElementById('tblYear');
+  ALL_YEARS.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;yr.appendChild(o);});
+  yr.onchange=e=>{S.tblYear=e.target.value;S.tblPage=1;renderTable();};
+  const un=document.getElementById('tblUnit');
+  ALL_UNITS.forEach(u=>{const o=document.createElement('option');o.value=u;o.textContent=u;un.appendChild(o);});
+  un.onchange=e=>{S.tblUnit=e.target.value;S.tblPage=1;renderTable();};
+  document.getElementById('tblSearch').addEventListener('input',e=>{S.tblSearch=e.target.value.toLowerCase();S.tblPage=1;renderTable();});
+}
+
+function getTableRows(){
+  let rows=DATA.filter(r=>{
+    if(S.tblYear!=='all'&&r.year!==+S.tblYear)return false;
+    if(S.tblUnit!=='all'&&r.unit!==S.tblUnit)return false;
+    if(S.tblSearch&&!r.unit.toLowerCase().includes(S.tblSearch))return false;
+    return true;
+  });
+  rows.sort((a,b)=>{
+    const av=a[S.tblSort.col]??0, bv=b[S.tblSort.col]??0;
+    if(typeof av==='string')return S.tblSort.dir*av.localeCompare(bv);
+    return S.tblSort.dir*(bv-av);
+  });
+  return rows;
+}
+
+function renderTable(){
+  const rows=getTableRows(), total=rows.length;
+  const start=(S.tblPage-1)*PAGE_SZ, paged=rows.slice(start,start+PAGE_SZ);
+  const maxT=Math.max(...rows.map(r=>r['Total Cases'])||[1]);
+
+  const head=document.getElementById('tblHead');
+  head.innerHTML='';
+  const htr=document.createElement('tr');
+  TBL_COLS.forEach(col=>{
+    const th=document.createElement('th');
+    const key=col;
+    const lbl=col==='unit'?'Unit':col==='year'?'Year':col==='Woman & Child Repression'?'Women & Child':col;
+    const sorted=S.tblSort.col===key;
+    th.innerHTML=`${lbl} <span style="opacity:${sorted?1:.3};color:${sorted?'var(--accent)':'inherit'}">${S.tblSort.dir<0?'↓':'↑'}</span>`;
+    if(sorted)th.classList.add('sorted');
+    th.onclick=()=>{ if(S.tblSort.col===key)S.tblSort.dir*=-1; else{S.tblSort.col=key;S.tblSort.dir=-1;} renderTable(); };
+    htr.appendChild(th);
+  });
+  head.appendChild(htr);
+
+  const body=document.getElementById('tblBody');
+  body.innerHTML='';
+  if(!paged.length){ body.innerHTML=`<tr><td colspan="${TBL_COLS.length}" style="text-align:center;padding:40px;color:var(--text3);font-size:14px;">No records found</td></tr>`; }
+  else paged.forEach(r=>{
+    const tr=document.createElement('tr');
+    TBL_COLS.forEach(col=>{
+      const td=document.createElement('td');
+      if(col==='unit'){
+        td.style.fontWeight='500'; td.style.cursor='pointer'; td.style.color='var(--accent)';
+        td.textContent=r.unit;
+        td.onclick=()=>openModal(r.unit);
+      } else if(col==='year'){ td.textContent=r.year; td.style.color='var(--text2)'; }
+      else if(col==='Total Cases'){
+        const pct=((r['Total Cases']/maxT)*100).toFixed(1);
+        td.innerHTML=`<span style="font-weight:600">${fmtN(r['Total Cases'])}</span><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${pct}%"></div></div>`;
+      } else {
+        td.textContent=fmtN(r[col]||0);
+        td.style.color=(r[col]||0)===0?'var(--text3)':'var(--text1)';
+      }
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+
+  // Pagination
+  const pages=Math.ceil(total/PAGE_SZ);
+  const pag=document.getElementById('tblPag');
+  pag.innerHTML=`<div class="pag-info">Showing ${Math.min(start+1,total)}–${Math.min(start+PAGE_SZ,total)} of ${fmtN(total)}</div>`;
+  const btns=document.createElement('div'); btns.className='pag-btns';
+  const prev=document.createElement('button'); prev.className='pb'; prev.textContent='←'; prev.disabled=S.tblPage<=1; prev.onclick=()=>{S.tblPage--;renderTable();}; btns.appendChild(prev);
+  for(let p=Math.max(1,S.tblPage-3);p<=Math.min(pages,S.tblPage+3);p++){
+    const pb=document.createElement('button'); pb.className='pb'+(p===S.tblPage?' active':''); pb.textContent=p; pb.onclick=()=>{S.tblPage=p;renderTable();}; btns.appendChild(pb);
+  }
+  const next=document.createElement('button'); next.className='pb'; next.textContent='→'; next.disabled=S.tblPage>=pages; next.onclick=()=>{S.tblPage++;renderTable();}; btns.appendChild(next);
+  pag.appendChild(btns);
+}
+
+// ═══════════════════════════════
+//   NAV TABS
+// ═══════════════════════════════
+document.querySelectorAll('.nav-tab').forEach(tab=>{
+  tab.onclick=()=>{
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('page-'+tab.dataset.tab).classList.add('active');
+    // lazy render
+    if(tab.dataset.tab==='trends') renderYoY();
+    if(tab.dataset.tab==='compare') renderCompare();
+    if(tab.dataset.tab==='heatmap') renderHeatmap();
+    if(tab.dataset.tab==='ranking') renderRanking();
+    if(tab.dataset.tab==='anomalies') renderAnomalies();
+    if(tab.dataset.tab==='browse') renderTable();
+  };
+});
+
+// ═══════════════════════════════
+//   INIT ALL
+// ═══════════════════════════════
+renderHero();
+initSlider();
+initCatPills();
+initViewPills();
+initUnitFilter();
+renderOverviewCharts();
+
+initYoYFilters();
+initCompare();
+initHeatmap();
+initRanking();
+initAnomalies();
+initBrowse();
+</script>
+</body>
+</html>
