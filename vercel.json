@@ -1,4 +1,7 @@
 {
+  "rewrites": [
+    { "source": "/", "destination": "/bd_crime_dashboard_v2.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
